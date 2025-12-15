@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BrahminBazaar Admin Panel</title>
+  <style>
+    :root{
+       --primary-dark:#00796b;
+       --primary:#009688;
+       --primary-light:#4db6ac;
+       --accent:var(--primary);
+       --text-dark:#1a1a1a;
+       --muted:#6b7280;
+       --card:#ffffff;
+       --bg:#f8f8f8;
+       --radius:14px;
+       --shadow: 0 8px 15px rgba(12,24,12,0.04);
+       --max-width:1400px;
+    } 
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:#333;}
+    header{background:var(--primary-dark);color:#fff;padding:16px 30px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+    .wrap{max-width:var(--max-width);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px;}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand .logo{height:36px;width:auto;display:block}
+    h1{font-size:1.5rem;margin:0}
+    .back-link{color:var(--primary-light);font-size:0.9rem;text-decoration:none;font-weight:600;transition:color .2s}
+    .back-link:hover{color:#fff}
+
+    /* Login Screen */
+    #login-screen{position:fixed;inset:0;background:rgba(4,6,8,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);}
+    .login-box{background:var(--card);padding:30px;border-radius:12px;box-shadow:0 20px 40px rgba(12,18,20,0.3);max-width:360px;width:92%;text-align:center}
+    .login-logo{height:40px;margin-bottom:10px}
+    .login-box h2{color:var(--primary-dark);margin-bottom:20px}
+    .login-box input{width:100%;padding:12px;margin-bottom:15px;border:1px solid #ddd;border-radius:8px}
+    .login-box button{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+
+    /* Main */
+    main{max-width:var(--max-width);margin:22px auto;padding:0 30px;}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:30px}
+    .stat-card{background:var(--card);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);border-left:5px solid var(--primary-light)}
+    .stat-card h3{font-size:1rem;color:var(--muted);margin-bottom:5px}
+    .stat-card .value{font-size:2.2rem;font-weight:800;color:var(--primary-dark)}
+
+    /* Tabs */
+    .tabs{display:flex;border-bottom:2px solid #ddd;margin-bottom:20px;overflow-x:auto}
+    .tab-btn{padding:10px 15px;cursor:pointer;font-weight:600;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+    .tab-btn.active{color:var(--primary-dark);border-bottom:2px solid var(--primary-dark)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+
+    /* Tables / containers */
+    .table-container{background:var(--card);border-radius:var(--radius);padding:15px;box-shadow:var(--shadow);overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:12px 15px;text-align:left;border-bottom:1px solid #eee;font-size:0.9rem}
+    th{background:var(--bg);color:var(--primary-dark);font-weight:700}
+    .current-price{font-weight:700;color:var(--text-dark)}
+    .btn-edit,.btn-save{background:var(--primary);color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600}
+    .btn-save{background:var(--primary-dark)}
+    .btn-cancel{background:#e0e0e0;color:#333;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600;margin-left:5px}
+    .btn-delete{background:#d32f2f;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600;margin-left:5px}
+    .btn-delete:hover{background:#b71c1c}
+    .btn-detail{background:#f5f5f5;color:var(--text-dark);border:1px solid #ddd;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:600}
+    .edit-input{width:90px;padding:5px;border:1px solid var(--primary);border-radius:4px}
+    .add-product-btn{background:var(--primary-dark);color:#fff;padding:8px 15px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:background .2s}
+    .add-product-btn:hover{background:#005c56}
+
+    /* Lists */
+    .user-list-container{max-height:420px;overflow-y:auto}
+
+    /* Top controls */
+    .top-controls{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+    .top-controls input,.top-controls select{padding:10px;border:1px solid #ddd;border-radius:8px;min-width:240px}
+
+    /* Modal */
+    #modalBack{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:100;display:none;align-items:center;justify-content:center}
+    #modalContent{background:var(--card);padding:25px;border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:600px;width:90%}
+    #modalContent input,#modalContent select,#modalContent textarea{width:100%;padding:10px;margin-top:5px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px}
+    #modalContent label{font-size:0.9rem;font-weight:600;color:var(--primary-dark);margin-top:5px;display:block}
+    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+  </style>
+</head>
+<body>
+
+  <!-- Modal -->
+  <div id="modalBack" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+    <div id="modalContent"></div>
+  </div>
+
+  <!-- Login -->
+  <div id="login-screen">
+    <div class="login-box">
+      <img src="logo.png" alt="BrahminBazaar" class="login-logo">
+      <h2>Admin Login</h2>
+      <form id="loginForm">
+        <input type="password" id="adminPassword" placeholder="Admin Password" required>
+        <button type="submit">Log In</button>
+      </form>
+      <p style="margin-top:10px;"><a class="back-link" href="index2.html">← Back to Store</a></p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header id="adminHeader" style="display:none;">
+    <div class="wrap">
+      <div class="brand">
+        <img src="logo.png" alt="BrahminBazaar Logo" class="logo">
+        <h1>BrahminBazaar Admin Panel</h1>
+      </div>
+      <a class="back-link" href="index2.html">Back to Store</a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main id="adminMain" style="display:none;">
+    <div class="stats-grid">
+      <div class="stat-card"><h3>Pending Orders</h3><div class="value" id="pendingOrders">0</div></div>
+      <div class="stat-card"><h3>Registered Accounts</h3><div class="value" id="totalAccounts">0</div></div>
+      <div class="stat-card"><h3>Total Products</h3><div class="value" id="totalProducts">0</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="products">Product Management</button>
+      <button class="tab-btn" data-tab="users">Registered Users</button>
+      <button class="tab-btn" data-tab="sellers">Sellers</button>
+      <button class="tab-btn" data-tab="orders">Placed Orders</button>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="products" class="tab-content active">
+      <div class="top-controls">
+        <input type="text" id="productSearch" placeholder="Search products... (name/id/category)">
+        <select id="categoryFilter"><option value="All">All Categories</option></select>
+        <button class="add-product-btn" onclick="openAddProductModal()">+ Add New Product</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Product (ID)</th><th>Category</th><th>Base Price (₹/kg or L)</th><th>Actions</th></tr></thead>
+          <tbody id="productTableBody"><tr><td colspan="4" style="text-align:center;">Loading products...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="users" class="tab-content">
+      <div class="top-controls">
+        <input type="text" id="userSearch" placeholder="Search users... (name/email/phone/address)">
+      </div>
+      <div class="table-container user-list-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email ID</th>
+              <th>Phone</th>
+              <th>Address</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SELLERS -->
+    <div id="sellers" class="tab-content">
+      <div class="top-controls">
+        <input type="text" id="sellerSearch" placeholder="Search sellers... (product/seller/email/phone/address/desc)">
+      </div>
+
+      <div class="table-container" style="margin-bottom:15px;">
+        <form id="sellerForm">
+          <div class="top-controls">
+            <input type="text" id="sellerProductName" placeholder="Product name" required>
+            <input type="text" id="sellerName" placeholder="Seller name" required>
+            <input type="email" id="sellerEmail" placeholder="Email" required>
+            <input type="tel" id="sellerPhone" placeholder="Phone (10 digits)" required>
+            <input type="text" id="sellerAddress" placeholder="Seller address" required>
+            <input type="text" id="sellerDesc" placeholder="Description (quality, region, etc.)">
+          </div>
+          <div class="modal-actions" style="padding:0;">
+            <button type="reset" class="btn-cancel">Clear</button>
+            <button type="submit" class="btn-save">Add Seller</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Seller</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Description</th>
+              <th style="min-width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sellerTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">No sellers added yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="orders" class="tab-content">
+      <div class="top-controls">
+        <input type="text" id="orderSearch" placeholder="Search orders... (order id/customer/status)">
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Order ID</th><th>Customer Name</th><th>Total Price</th><th>Status</th><th>Date</th><th>Details</th></tr></thead>
+          <tbody id="orderTableBody"><tr><td colspan="6" style="text-align:center;">Loading orders...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /*************** CONSTANTS & KEYS ***************/
+    const ADMIN_PASSWORD = 'admin9307';
+
+    // Shared with buyer
+    const PRODUCTS_KEY = 'brahminbazaar_admin_products'; // synced catalog
+    const ACCOUNTS_KEY = 'bb_accounts_v1';
+    const SESSION_KEY  = 'bb_user_v1';
+    const ORDERS_KEY   = 'brahminbazaar_orders';
+    const SELLERS_KEY  = 'brahminbazaar_sellers';
+
+    // For convenience, use same key constants throughout
+    const STORAGE_KEY_PRODUCTS = PRODUCTS_KEY;
+    const STORAGE_KEY_ORDERS   = ORDERS_KEY;
+    const STORAGE_KEY_SELLERS  = SELLERS_KEY;
+
+    // Broadcast channel for instant cross-tab sync
+    const SYNC_CH = ('BroadcastChannel' in window) ? new BroadcastChannel('bb_sync') : null;
+
+    /*************** STATE ***************/
+    let PRODUCTS = [];
+    let ORDERS = [];
+    let SELLERS = [];   // {id, productName, sellerName, email, phone, address, desc}
+    let ACCOUNTS = {};  // loaded from ACCOUNTS_KEY
+
+    const productTableBody = document.getElementById('productTableBody');
+    const categoryFilter   = document.getElementById('categoryFilter');
+    const productSearch    = document.getElementById('productSearch');
+    const userTableBody    = document.getElementById('userTableBody');
+    const userSearch       = document.getElementById('userSearch');
+    const sellerTableBody  = document.getElementById('sellerTableBody');
+    const sellerSearch     = document.getElementById('sellerSearch');
+    const orderTableBody   = document.getElementById('orderTableBody');
+    const orderSearch      = document.getElementById('orderSearch');
+    const modalBack        = document.getElementById('modalBack');
+    const modalContent     = document.getElementById('modalContent');
+
+    // Some sensible defaults if storage is empty (used once)
+    const DEFAULT_PRODUCTS = [
+      {id:'rice-sona',category:'Rice',title:'Sona Masoori',basePrice:60,img:'https://via.placeholder.com/400x300?text=Sona+Masoori',varieties:['Raw','Steam','Parboiled'],oil:false},
+      {id:'rice-ponni',category:'Rice',title:'Ponni Rice',basePrice:55,img:'https://via.placeholder.com/400x300?text=Ponni+rice',varieties:['Raw','Steamed'],oil:false},
+      {id:'rice-basmati',category:'Rice',title:'Basmati',basePrice:170,img:'https://via.placeholder.com/400x300?text=Basmati',varieties:['Standard','Aged'],oil:false},
+      {id:'dal-toor',category:'Dals',title:'Toor Dal',basePrice:140,img:'https://via.placeholder.com/400x300?text=Toor+Dal',oil:false},
+      {id:'sp-turmeric',category:'Spices',title:'Turmeric Powder',basePrice:300,img:'https://via.placeholder.com/400x300?text=Turmeric',oil:false},
+      {id:'oil-gingelly',category:'Oils',title:'Gingelly (Sesame) Oil',basePrice:420,img:'https://via.placeholder.com/400x300?text=Gingelly+Oil',oil:true},
+      {id:'oil-coconut',category:'Oils',title:'Coconut Oil',basePrice:260,img:'https://via.placeholder.com/400x300?text=Coconut+Oil',oil:true},
+      {id:'salt-pink',category:'Salts',title:'Himalayan Pink Salt',basePrice:40,img:'https://via.placeholder.com/400x300?text=Pink+Salt',oil:false},
+      {id:'flour-wheat',category:'Flours',title:'Wheat Flour (Atta)',basePrice:35,img:'https://via.placeholder.com/400x300?text=Wheat+Flour',oil:false},
+      {id:'bev-coffee',category:'Beverages',title:'Coffee Powder',basePrice:450,img:'https://via.placeholder.com/400x300?text=Coffee',oil:false},
+    ];
+
+    /*************** LOAD & SAVE ***************/
+    function loadProducts(){
+      try{
+        const s = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+        PRODUCTS = s ? JSON.parse(s) : DEFAULT_PRODUCTS;
+        // Ensure array of objects with expected fields
+        if (!Array.isArray(PRODUCTS)) PRODUCTS = DEFAULT_PRODUCTS;
+      } catch(e){ PRODUCTS = DEFAULT_PRODUCTS; }
+    }
+    function saveProducts(){
+      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(PRODUCTS));
+      notifyCatalogUpdated();
+    }
+
+    function loadOrders(){
+      try{ const s=localStorage.getItem(STORAGE_KEY_ORDERS); ORDERS = s ? JSON.parse(s) : []; }
+      catch(e){ ORDERS = []; }
+    }
+    function saveOrders(){ localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(ORDERS)); }
+
+    function loadSellers(){
+      try{ const s=localStorage.getItem(STORAGE_KEY_SELLERS); SELLERS = s ? JSON.parse(s) : []; }
+      catch(e){ SELLERS = []; }
+    }
+    function saveSellers(){ localStorage.setItem(STORAGE_KEY_SELLERS, JSON.stringify(SELLERS)); }
+
+    function loadAccounts(){
+      try{ const s=localStorage.getItem(ACCOUNTS_KEY); ACCOUNTS = s ? JSON.parse(s) : {}; }
+      catch(e){ ACCOUNTS = {}; }
+    }
+
+    /*************** SYNC: ADMIN → BUYER ***************/
+    function notifyCatalogUpdated() {
+      try { SYNC_CH && SYNC_CH.postMessage({ type:'catalog-updated', at:Date.now() }); } catch(_) {}
+      try {
+        // Also trigger storage event for other tabs (manually touching the key)
+        const tmp = JSON.parse(localStorage.getItem(STORAGE_KEY_PRODUCTS) || '[]');
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(tmp));
+      } catch(_) {}
+    }
+
+    /*************** HELPERS ***************/
+    function money(n){ return Number(n).toFixed(2); }
+    function closeModal(){ modalBack.style.display='none'; modalContent.innerHTML=''; modalBack.setAttribute('aria-hidden','true'); }
+    modalBack.addEventListener('click',e=>{ if(e.target===modalBack) closeModal(); });
+    function slugify(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+    /*************** PRODUCTS UI ***************/
+    let currentFilter = { category:'All' };
+
+    function getCategories(){ return [...new Set(PRODUCTS.map(p=>p.category))].sort(); }
+    function renderCategoryFilter(){
+      categoryFilter.innerHTML = '<option value="All">All Categories</option>';
+      getCategories().forEach(cat=>{
+        const o=document.createElement('option'); o.value=cat; o.textContent=cat; categoryFilter.appendChild(o);
+      });
+      categoryFilter.value = currentFilter.category;
+    }
+
+    function renderProducts(){
+      const q = (productSearch.value||'').toLowerCase().trim();
+      let list = PRODUCTS.filter(p=>{
+        const hay = (p.title+' '+(p.id||'')+' '+p.category).toLowerCase();
+        const catok = currentFilter.category==='All' || p.category===currentFilter.category;
+        return catok && hay.includes(q);
+      });
+      productTableBody.innerHTML='';
+      if(!list.length){ productTableBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">No products found</td></tr>'; }
+      list.forEach(p=>{
+        const tr=document.createElement('tr'); tr.id='row-'+p.id;
+        tr.innerHTML = `
+          <td>${p.title} <span style="font-size:.75rem;color:var(--muted)">(${p.id})</span></td>
+          <td>${p.category}</td>
+          <td id="price-${p.id}"><span class="current-price">₹${money(p.basePrice)} / ${p.oil?'L':'kg'}</span></td>
+          <td id="action-${p.id}">
+            <button class="btn-edit" onclick="startEdit('${p.id}')">Edit Price</button>
+            <button class="btn-delete" onclick="deleteProduct('${p.id}','${p.title.replace(/'/g,"&#39;")}')">Delete</button>
+          </td>`;
+        productTableBody.appendChild(tr);
+      });
+      document.getElementById('totalProducts').textContent = PRODUCTS.length;
+    }
+
+    window.startEdit = function(id){
+      const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+      document.getElementById('price-'+id).innerHTML =
+        `<input type="number" id="input-${id}" class="edit-input" value="${p.basePrice}" min="0.01" step="0.01" /> / ${p.oil?'L':'kg'}`;
+      document.getElementById('action-'+id).innerHTML =
+        `<button class="btn-save" onclick="saveEdit('${id}')">Save</button>
+         <button class="btn-cancel" onclick="cancelEdit('${id}')">Cancel</button>`;
+    };
+
+    window.saveEdit = function(id){
+      const input=document.getElementById('input-'+id);
+      const val=Number(input.value);
+      if(isNaN(val)||val<=0){ alert('Enter a valid price'); return; }
+      const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
+      p.basePrice=val; saveProducts(); cancelEdit(id);
+      alert(`Updated ₹${val.toFixed(2)} / ${p.oil?'L':'kg'}`);
+      renderProducts(); // refresh visible row
+    };
+
+    window.cancelEdit = function(id){
+      const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
+      document.getElementById('price-'+id).innerHTML =
+        `<span class="current-price">₹${money(p.basePrice)} / ${p.oil?'L':'kg'}</span>`;
+      document.getElementById('action-'+id).innerHTML =
+        `<button class="btn-edit" onclick="startEdit('${p.id}')">Edit Price</button>
+         <button class="btn-delete" onclick="deleteProduct('${p.id}','${p.title.replace(/'/g,"&#39;")}')">Delete</button>`;
+    };
+
+    window.deleteProduct = function(id,title){
+      if(!confirm(`Delete product: ${title}?`)) return;
+      PRODUCTS = PRODUCTS.filter(p=>p.id!==id);
+      saveProducts(); renderCategoryFilter(); renderProducts();
+      alert(`${title} removed.`);
+    };
+
+    window.openAddProductModal = function(){
+      modalContent.innerHTML = `
+        <h3>Add New Product</h3>
+        <form id="addProductForm">
+          <label>Product Name</label><input id="newTitle" required>
+          <label>Category</label>
+          <select id="newCategory" required>
+            ${getCategories().map(c=>`<option value="${c}">${c}</option>`).join('')}
+            <option value="__new__">-- Add New Category --</option>
+          </select>
+          <input type="text" id="newCustomCategory" placeholder="Enter new category name" style="display:none;">
+          <label>Base Price (per kg or L)</label><input type="number" id="newPrice" min="0.01" step="0.01" required>
+          <label>Unit Type</label>
+          <select id="newUnitType"><option value="false">Weight (Per kg)</option><option value="true">Volume (Per L)</option></select>
+          <label>Product ID</label>
+          <input id="newId" placeholder="Leave blank to auto-generate from name">
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button type="submit" class="btn-save">Add Product</button>
+          </div>
+        </form>`;
+      modalBack.style.display='flex'; modalBack.setAttribute('aria-hidden','false');
+
+      const sel=document.getElementById('newCategory'), custom=document.getElementById('newCustomCategory');
+      sel.onchange=()=>{ const addNew=sel.value==='__new__'; custom.style.display = addNew?'block':'none'; custom.required = addNew; };
+
+      document.getElementById('addProductForm').onsubmit = e=>{
+        e.preventDefault();
+        let title=document.getElementById('newTitle').value.trim();
+        let cat=sel.value, catNew=custom.value.trim();
+        let price=Number(document.getElementById('newPrice').value);
+        let isOil=document.getElementById('newUnitType').value==='true';
+        let idRaw=(document.getElementById('newId').value||'').trim();
+        if(cat==='__new__'){ if(!catNew){ alert('Enter new category'); return; } cat=catNew; }
+        let id = idRaw || `${slugify(title)}-${Date.now().toString().slice(-4)}`;
+        if(PRODUCTS.some(p=>p.id===id)){ alert('Product ID already exists. Enter a unique ID.'); return; }
+
+        PRODUCTS.push({id,category:cat,title,basePrice:price,img:`https://via.placeholder.com/400x300?text=${encodeURIComponent(title)}`,oil:isOil,varieties:[]});
+        saveProducts(); renderCategoryFilter(); renderProducts(); closeModal(); alert(`Product "${title}" added with ID "${id}".`);
+      };
+    };
+
+    /*************** USERS UI ***************/
+    function renderUsers(){
+      const q = (userSearch.value||'').toLowerCase().trim();
+      const entries = Object.values(ACCOUNTS || {}).filter(u=>{
+        const hay = `${u.name||''} ${u.email||''} ${u.phone||''} ${u.address||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      userTableBody.innerHTML='';
+      if(!entries.length){
+        userTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">No accounts found.</td></tr>`;
+      } else {
+        entries.forEach(u=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML = `
+            <td>${u.name || '(No name)'}</td>
+            <td>${u.email || '—'}</td>
+            <td>${u.phone || '—'}</td>
+            <td style="max-width:420px;">${u.address || '—'}</td>`;
+          userTableBody.appendChild(tr);
+        });
+      }
+      document.getElementById('totalAccounts').textContent = Object.keys(ACCOUNTS||{}).length;
+    }
+
+    /*************** SELLERS UI ***************/
+    function renderSellers(){
+      const q = (sellerSearch.value||'').toLowerCase().trim();
+      const list = SELLERS.filter(s=>{
+        const hay = `${s.productName} ${s.sellerName} ${s.email} ${s.phone} ${s.address||''} ${s.desc||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      sellerTableBody.innerHTML='';
+      if(!list.length){
+        sellerTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">No sellers found.</td></tr>`;
+        return;
+      }
+      list.forEach(s=>{
+        const tr=document.createElement('tr'); tr.id='seller-'+s.id;
+        tr.innerHTML = `
+          <td>${s.productName}</td>
+          <td>${s.sellerName}</td>
+          <td>${s.email}</td>
+          <td>${s.phone}</td>
+          <td>${s.address || ''}</td>
+          <td>${s.desc || ''}</td>
+          <td>
+            <button class="btn-edit" onclick="editSeller('${s.id}')">Edit</button>
+            <button class="btn-delete" onclick="deleteSeller('${s.id}')">Delete</button>
+          </td>`;
+        sellerTableBody.appendChild(tr);
+      });
+    }
+
+    // Add seller
+    document.getElementById('sellerForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const productName = document.getElementById('sellerProductName').value.trim();
+      const sellerName  = document.getElementById('sellerName').value.trim();
+      const email       = document.getElementById('sellerEmail').value.trim();
+      const phone       = document.getElementById('sellerPhone').value.trim();
+      const address     = document.getElementById('sellerAddress').value.trim();
+      const desc        = document.getElementById('sellerDesc').value.trim();
+
+      if(!/^\d{10}$/.test(phone)){ alert('Enter a 10-digit phone number'); return; }
+
+      const id = 'sel-'+Date.now().toString(36);
+      SELLERS.push({id, productName, sellerName, email, phone, address, desc});
+      saveSellers(); renderSellers();
+      e.target.reset();
+      alert('Seller added.');
+    });
+
+    // Edit seller (modal)
+    window.editSeller = function(id){
+      const s = SELLERS.find(x=>x.id===id); if(!s) return;
+      modalContent.innerHTML = `
+        <h3>Edit Seller</h3>
+        <label>Product name</label><input id="e_product" value="${s.productName}">
+        <label>Seller name</label><input id="e_name" value="${s.sellerName}">
+        <label>Email</label><input id="e_email" type="email" value="${s.email}">
+        <label>Phone</label><input id="e_phone" type="tel" value="${s.phone}">
+        <label>Address</label><input id="e_addr" value="${s.address||''}">
+        <label>Description</label><input id="e_desc" value="${s.desc||''}">
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="saveSeller('${s.id}')">Save</button>
+        </div>`;
+      modalBack.style.display='flex'; modalBack.setAttribute('aria-hidden','false');
+    };
+
+    window.saveSeller = function(id){
+      const idx = SELLERS.findIndex(x=>x.id===id); if(idx<0) return;
+      const phone = (document.getElementById('e_phone').value||'').trim();
+      if(!/^\d{10}$/.test(phone)){ alert('Enter a 10-digit phone number'); return; }
+      SELLERS[idx] = {
+        ...SELLERS[idx],
+        productName: (document.getElementById('e_product').value||'').trim(),
+        sellerName : (document.getElementById('e_name').value||'').trim(),
+        email      : (document.getElementById('e_email').value||'').trim(),
+        phone,
+        address    : (document.getElementById('e_addr').value||'').trim(),
+        desc       : (document.getElementById('e_desc').value||'').trim()
+      };
+      saveSellers(); renderSellers(); closeModal(); alert('Seller updated.');
+    };
+
+    window.deleteSeller = function(id){
+      if(!confirm('Delete this seller?')) return;
+      SELLERS = SELLERS.filter(s=>s.id!==id);
+      saveSellers(); renderSellers();
+    };
+
+    /*************** ORDERS UI ***************/
+    function renderOrders(){
+      const q = (orderSearch.value||'').toLowerCase().trim();
+      const list = (ORDERS||[]).filter(o=>{
+        const hay = `${o.orderId||''} ${o.customer?.name||''} ${o.status||''}`.toLowerCase();
+        return hay.includes(q);
+      }).sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+      orderTableBody.innerHTML='';
+      if(!list.length){
+        orderTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">No orders found.</td></tr>`;
+        return;
+      }
+      list.forEach(o=>{
+        const d = new Date(o.date);
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${o.orderId}</td>
+          <td>${o.customer?.name || ''}</td>
+          <td class="current-price">₹${money(o.totalPrice||0)}</td>
+          <td><span style="color:${o.status==='Pending'?'#ff9800':'#4caf50'};font-weight:700;">${o.status||'Pending'}</span></td>
+          <td>${d.toLocaleDateString()}<br><small style="color:var(--muted)">${d.toLocaleTimeString()}</small></td>
+          <td><button class="btn-detail" onclick="openOrderDetailModal('${o.orderId}')">View</button></td>`;
+        orderTableBody.appendChild(tr);
+      });
+    }
+
+    window.openOrderDetailModal = function(orderId){
+      const o = ORDERS.find(x=>x.orderId===orderId); if(!o) return alert('Order not found.');
+      const itemsHtml = (o.items||[]).map(it=>`
+        <tr>
+          <td>${it.title}</td>
+          <td>${it.size} x ${it.packs}</td>
+          <td>${it.variety || 'N/A'}</td>
+          <td>₹${money((it.price||0)/Math.max(1,it.packs||1))}</td>
+          <td class="current-price">₹${money(it.price||0)}</td>
+        </tr>`).join('');
+      modalContent.innerHTML = `
+        <h3 style="color:var(--primary-dark)">Order Details: ${o.orderId}</h3>
+        <p style="margin-bottom:15px;color:var(--muted);">Placed on: ${new Date(o.date).toLocaleString()}</p>
+        <div style="border:1px solid #ddd;padding:15px;border-radius:8px;margin-bottom:15px;">
+          <h4 style="margin-bottom:10px;">Customer & Shipping</h4>
+          <p><b>Name:</b> ${o.customer?.name||''}</p>
+          <p><b>Phone:</b> ${o.customer?.phone||''}</p>
+          <p><b>Email:</b> ${o.customer?.email||'N/A'}</p>
+          <p style="margin-top:8px;"><b>Address:</b> ${o.customer?.address||''}</p>
+        </div>
+        <h4 style="margin-bottom:10px;">Items Ordered (${(o.items||[]).length})</h4>
+        <div class="table-container" style="padding:10px;box-shadow:none;border:1px solid #eee;">
+          <table>
+            <thead><tr><th>Product</th><th>Quantity</th><th>Variety</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+        </div>
+        <h3 style="text-align:right;margin-top:15px;color:var(--primary-dark)">Total Price: ₹${money(o.totalPrice||0)}</h3>
+        <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Close</button></div>`;
+      modalBack.style.display='flex'; modalBack.setAttribute('aria-hidden','false');
+    };
+
+    /*************** TABS & INIT ***************/
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const tabId = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        refreshAll(); // re-render on tab switch
+      });
+    });
+
+    function refreshAll(){
+      loadProducts(); loadOrders(); loadSellers(); loadAccounts();
+      renderCategoryFilter();
+      renderProducts();
+      renderUsers();
+      renderSellers();
+      renderOrders();
+      document.getElementById('pendingOrders').textContent = (ORDERS.filter(o=>o.status==='Pending').length || 0);
+      document.getElementById('totalAccounts').textContent = Object.keys(ACCOUNTS||{}).length;
+      document.getElementById('totalProducts').textContent = PRODUCTS.length;
+    }
+
+    // Listeners
+    categoryFilter.addEventListener('change', e=>{ currentFilter.category=e.target.value; renderProducts(); });
+    productSearch.addEventListener('input', renderProducts);
+    userSearch.addEventListener('input', renderUsers);
+    sellerSearch.addEventListener('input', renderSellers);
+    orderSearch.addEventListener('input', renderOrders);
+
+    // Auth gate
+    document.getElementById('loginForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      if(document.getElementById('adminPassword').value===ADMIN_PASSWORD){
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('adminHeader').style.display='block';
+        document.getElementById('adminMain').style.display='block';
+        refreshAll();
+      } else { alert('Access Denied. Incorrect Admin Password.'); }
+    });
+  </script>
+  <!-- === DB WIRE (ADMIN) — paste above </body> === -->
+<script>
+    // --- CONFIGURATION & CONSTANTS ---
+    const API_BASE_URL = 'https://brahminbazaar.com/api';
+    const ADMIN_PASSWORD = 'admin9307'; // !!! IMPORTANT: CHANGE THIS IN PRODUCTION !!!
+
+    // --- GLOBAL DATA ARRAYS ---
+    let PRODUCTS = [];
+    let USERS_ARRAY = [];
+    let ORDERS = [];
+    let SELLERS = []; // Seller Applications
+
+    // --- DOM Elements ---
+    const modalBack = document.getElementById('modalBack');
+    const modalContent = document.getElementById('modalContent');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const productSearch = document.getElementById('productSearch');
+    const productTableBody = document.getElementById('productTableBody');
+    const userListEl = document.getElementById('userList');
+    const sellerTableBody = document.getElementById('sellerTableBody');
+    const orderTableBody = document.getElementById('orderTableBody');
+
+    // --- UTILITIES ---
+    function money(n){ return Number(n).toFixed(2); }
+    function closeModal(){ 
+        modalBack.style.display = 'none'; 
+        modalContent.innerHTML = ''; 
+        modalContent.style.maxWidth = '600px'; 
+        modalBack.setAttribute('aria-hidden','true');
+    }
+    modalBack.addEventListener('click', (e)=>{ 
+        if(e.target === modalBack) closeModal(); 
+    }); 
+    
+    // --- API CALLS: Data Loading ---
+    async function fetchData(endpoint, setter) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/${endpoint}`);
+            if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+            const data = await response.json();
+            setter(data);
+        } catch (error) {
+            console.error(`Error loading ${endpoint}:`, error);
+        }
+    }
+
+    function setProducts(data) { PRODUCTS = data; }
+    function setUsers(data) { USERS_ARRAY = data; }
+    function setOrders(data) { ORDERS = data; }
+    function setSellers(data) { SELLERS = data; }
+
+
+    async function loadAllData() {
+        await Promise.all([
+            fetchData('products', setProducts),
+            fetchData('users', setUsers),
+            fetchData('orders', setOrders),
+            fetchData('sellers', setSellers)
+        ]);
+        refreshAll(); // Render everything after data is loaded
+    }
+
+    // --- API CALLS: Product Actions (CRUD) ---
+    async function deleteProduct(id, title) {
+        if (!confirm(`Are you sure you want to delete product: ${title}? This action is irreversible.`)) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/products/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Delete failed');
+            alert('Product deleted successfully. Buyer panel refreshed.');
+            await loadAllData();
+        } catch (error) {
+            alert('Failed to delete product.');
+            console.error('Delete Error:', error);
+        }
+    }
+    window.deleteProduct = deleteProduct;
+
+    async function saveProductDetails(id, title, newPrice, category) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                // Use frontend field names for the body
+                body: JSON.stringify({ basePrice: parseFloat(newPrice), title: title, category: category }) 
+            });
+            if (!response.ok) throw new Error('Update failed');
+            alert('Product details updated successfully. Buyer panel refreshed.');
+            closeModal();
+            await loadAllData();
+        } catch (error) {
+            alert('Failed to update product details.');
+            console.error('Update Error:', error);
+        }
+    }
+    window.saveProductDetails = saveProductDetails;
+
+    async function addProduct(productData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData)
+            });
+            if (!response.ok) throw new Error('Add failed');
+            alert('Product added successfully. Buyer panel refreshed.');
+            closeModal();
+            await loadAllData();
+        } catch (error) {
+            alert('Failed to add product. Please check all fields.');
+            console.error('Add Error:', error);
+        }
+    }
+    
+    // --- API CALLS: Order/Seller Actions ---
+    async function handleSellerAction(id, action) {
+        if (!confirm(`Are you sure you want to ${action} this application?`)) return;
+        
+        try {
+            // Delete endpoint removes the application from the list
+            const response = await fetch(`${API_BASE_URL}/sellers/${id}`, { method: 'DELETE' }); 
+            if (!response.ok) throw new Error('Action failed');
+            
+            alert(`Application ${action} successfully.`);
+            await loadAllData();
+        } catch (error) {
+            alert(`Failed to ${action} application.`);
+            console.error('Seller Action Error:', error);
+        }
+    }
+    window.approveSeller = (id) => handleSellerAction(id, 'approve');
+    window.rejectSeller = (id) => handleSellerAction(id, 'reject');
+    
+    async function updateOrderStatus(id, newStatus) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (!response.ok) throw new Error('Status update failed');
+            alert('Order status updated.');
+            await loadAllData();
+        } catch (error) {
+            alert('Failed to update order status.');
+            console.error('Order Status Error:', error);
+        }
+    }
+    window.updateOrderStatus = updateOrderStatus;
+
+
+    // --- RENDERING FUNCTIONS ---
+    // NOTE: These functions must use the new array names (PRODUCTS, USERS_ARRAY, ORDERS, SELLERS)
+    
+    function getCategories() { 
+        return [...new Set(PRODUCTS.map(p => p.category))].sort(); 
+    }
+
+    function renderCategoryFilter() {
+        categoryFilter.innerHTML = '<option value="All">All Categories</option>';
+        getCategories().forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categoryFilter.appendChild(option);
+        });
+        categoryFilter.value = currentFilter.category;
+    }
+
+    // --- Product List Rendering ---
+    function renderProducts() {
+        const cat = currentFilter.category;
+        const search = (productSearch.value || '').trim().toLowerCase();
+
+        let filtered = PRODUCTS.filter(p => 
+            (cat === 'All' || p.category === cat) &&
+            (search === '' || p.title.toLowerCase().includes(search) || p.category.toLowerCase().includes(search))
+        );
+
+        productTableBody.innerHTML = filtered.map(p => `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.title}</td>
+                <td>${p.category}</td>
+                <td class="text-right">₹${money(p.basePrice)}/${p.isLiquid ? 'L' : 'Kg'}</td>
+                <td>
+                    <button class="btn-edit" onclick="startEdit('${p.id}', '${p.title}', '${p.category}', ${p.basePrice}, ${p.isLiquid})">Edit</button>
+                    <button class="btn-delete" onclick="deleteProduct('${p.id}', '${p.title}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- User List Rendering ---
+    function renderUsers() {
+        const search = (userSearch.value || '').trim().toLowerCase();
+        
+        let filtered = USERS_ARRAY.filter(u => 
+            (search === '' || u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search))
+        );
+
+        userListEl.innerHTML = filtered.map(u => `
+            <tr>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${u.phone}</td>
+                <td>${u.address.substring(0, 50)}...</td>
+                <td>${new Date(u.date).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    // --- Seller Application Rendering ---
+    function renderSellers() {
+        const search = (sellerSearch.value || '').trim().toLowerCase();
+        
+        let filtered = SELLERS.filter(s => 
+            (search === '' || s.sellerName.toLowerCase().includes(search) || s.productName.toLowerCase().includes(search))
+        );
+        
+        sellerTableBody.innerHTML = filtered.map(s => `
+            <tr>
+                <td>${s.sellerName} (${s.sellerEmail})</td>
+                <td>${s.productName} (₹${money(s.productPrice)})</td>
+                <td>${s.productDescription.substring(0, 50)}...</td>
+                <td>${new Date(s.date).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn-edit" onclick="approveSeller('${s._id}')">Approve</button>
+                    <button class="btn-delete" onclick="rejectSeller('${s._id}')">Reject</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- Order List Rendering ---
+    function renderOrders() {
+        const search = (orderSearch.value || '').trim().toLowerCase();
+        
+        let filtered = ORDERS.filter(o => 
+            (search === '' || o.userName.toLowerCase().includes(search) || o._id.toString().includes(search))
+        );
+
+        orderTableBody.innerHTML = filtered.map(o => `
+            <tr>
+                <td>${o._id.substring(0, 8)}...</td>
+                <td>${o.userName}</td>
+                <td>₹${money(o.totalAmount)}</td>
+                <td>${o.items.length} items</td>
+                <td>
+                    <select class="order-status-select ${o.status.toLowerCase()}" onchange="updateOrderStatus('${o._id}', this.value)">
+                        <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                        <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn-details" onclick="openOrderDetailsModal('${o._id}')">Details</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- Modal Logic (needs update for server side handling) ---
+    window.startEdit = (id, title, category, price, isLiquid) => {
+        modalContent.style.maxWidth = '400px'; 
+        modalContent.innerHTML = `
+            <h2>Edit Product</h2>
+            <form onsubmit="event.preventDefault(); saveProductDetails('${id}', document.getElementById('editTitle').value, document.getElementById('editPrice').value, document.getElementById('editCategory').value)">
+                <div class="form-group">
+                    <label for="editTitle">Title:</label>
+                    <input type="text" id="editTitle" value="${title}" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCategory">Category:</label>
+                    <input type="text" id="editCategory" value="${category}" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPrice">Base Price (₹/${isLiquid ? 'L' : 'Kg'}):</label>
+                    <input type="number" id="editPrice" step="0.01" value="${price}" required>
+                </div>
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+            </form>
+        `;
+        modalBack.style.display = 'flex';
+        modalBack.setAttribute('aria-hidden','false');
+    };
+    
+    window.openAddProductModal = () => {
+        modalContent.style.maxWidth = '400px'; 
+        modalContent.innerHTML = `
+            <h2>Add New Product</h2>
+            <form id="addProductForm">
+                <div class="form-group"><label for="title">Title:</label><input type="text" id="title" name="title" required></div>
+                <div class="form-group"><label for="basePrice">Base Price:</label><input type="number" id="basePrice" name="basePrice" step="0.01" required></div>
+                <div class="form-group"><label for="category">Category:</label><input type="text" id="category" name="category" required></div>
+                <div class="form-group"><label for="img">Image URL (Optional):</label><input type="text" id="img" name="img" value="placeholder.jpg"></div>
+                <div class="form-group"><label for="varieties">Varieties (comma-separated):</label><input type="text" id="varieties" name="varieties" placeholder="1kg,5kg,10kg"></div>
+                <div class="form-group"><label for="tagline">Tagline:</label><input type="text" id="tagline" name="tagline" value="Freshly sourced and premium quality."></div>
+                <div class="form-group"><label for="isLiquid">Is Liquid?</label><input type="checkbox" id="isLiquid" name="isLiquid"></div>
+                <button type="submit" class="btn-primary">Add Product</button>
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+            </form>
+        `;
+        modalBack.style.display = 'flex';
+        modalBack.setAttribute('aria-hidden','false');
+        
+        document.getElementById('addProductForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form).entries());
+
+            const productData = {
+                title: data.title,
+                basePrice: parseFloat(data.basePrice),
+                category: data.category,
+                img: data.img,
+                varieties: data.varieties.split(',').map(v=>v.trim()).filter(v=>v.length>0),
+                tagline: data.tagline,
+                isLiquid: form.elements.isLiquid.checked
+            };
+            addProduct(productData);
+        });
+    };
+    
+    window.openOrderDetailsModal = (orderId) => {
+        const order = ORDERS.find(o => o._id === orderId);
+        if (!order) return;
+        
+        const itemsList = order.items.map(item => `
+            <li>${item.title} (${item.variety}) x ${item.qty} @ ₹${money(item.price)}</li>
+        `).join('');
+
+        modalContent.style.maxWidth = '600px'; 
+        modalContent.innerHTML = `
+            <h2>Order Details (#${order._id.substring(0, 8)}...)</h2>
+            <p><strong>Customer:</strong> ${order.userName} (${order.userEmail})</p>
+            <p><strong>Shipping:</strong> ${order.shippingAddress}</p>
+            <p><strong>Order Date:</strong> ${new Date(order.orderDate).toLocaleString()}</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></p>
+            <p><strong>Total Amount:</strong> ₹${money(order.totalAmount)}</p>
+            <hr>
+            <h3>Items Ordered:</h3>
+            <ul>${itemsList}</ul>
+            <button class="btn-secondary mt-3" onclick="closeModal()">Close</button>
+        `;
+        modalBack.style.display = 'flex';
+        modalBack.setAttribute('aria-hidden','false');
+    };
+    
+
+    // --- CORE LOGIC ---
+    let currentFilter = { category: 'All', search: '', user: '', seller: '', order: '' };
+
+    function refreshAll(){
+        renderCategoryFilter();
+        renderProducts();
+        renderUsers();
+        renderSellers();
+        renderOrders();
+        
+        // Update dashboard stats
+        document.getElementById('pendingOrders').textContent = (ORDERS.filter(o=>o.status==='Pending').length || 0);
+        document.getElementById('totalAccounts').textContent = USERS_ARRAY.length;
+        document.getElementById('totalProducts').textContent = PRODUCTS.length;
+    }
+
+    // --- Admin Login Logic ---
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inputPassword = document.getElementById('adminPassword').value;
+        if (inputPassword === ADMIN_PASSWORD) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('adminHeader').style.display = 'block';
+            document.getElementById('adminMain').style.display = 'block';
+            
+            // Load all data from the server after successful login
+            await loadAllData(); 
+        } else {
+            alert('Access Denied. Incorrect Admin Password.');
+        }
+    });
+
+    // --- Listeners (unchanged from your original file) ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        document.getElementById(e.target.dataset.tab).classList.add('active');
+        refreshAll(); 
+      });
+    });
+
+    categoryFilter.addEventListener('change', e=>{ currentFilter.category=e.target.value; renderProducts(); });
+    productSearch.addEventListener('input', renderProducts);
+    userSearch.addEventListener('input', renderUsers);
+    sellerSearch.addEventListener('input', renderSellers);
+    orderSearch.addEventListener('input', renderOrders);
+    
+    // Initial call will be made after successful login.
+  </script>
+<!-- === /DB WIRE (ADMIN) === -->
+</body>
+</html>
