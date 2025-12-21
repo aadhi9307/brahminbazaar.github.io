@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Secure Payment | BrahminBazaar</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        :root {
+            --primary: #F1C40F;
+            --primary-dark: #D4AC0D;
+            --bg: #F9F9F9;
+            --card: #FFFFFF;
+            --text: #333;
+            --border: #E0E0E0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .payment-card {
+            background: var(--card);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            max-height: 90vh; /* Better for mobile keyboards */
+        }
+
+        .header {
+            background: #FAFAFA;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .header img { height: 32px; opacity: 0.8; }
+        .header h2 { font-size: 1.1rem; margin-top: 10px; font-weight: 600; color: #555; }
+
+        .body { 
+            padding: 30px; 
+            overflow-y: auto; 
+            flex-grow: 1;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .amount-box {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .label { font-size: 0.9rem; color: #777; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .amount { font-size: 2.5rem; font-weight: 800; color: #000; margin-top: 5px; }
+
+        .order-summary {
+            background: #FDFDFD;
+            border: 1px solid #EEE;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        .line-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .line-item.total { border-top: 1px dashed #DDD; padding-top: 15px; margin-top: 15px; font-weight: 700; font-size: 1.1rem; color: #000; }
+
+        /* Review Details Styling */
+        .review-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #DDD;
+        }
+        .review-block { margin-bottom: 12px; }
+        .review-label { font-size: 0.7rem; color: #999; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+        .review-val { font-size: 0.9rem; color: #333; line-height: 1.4; word-break: break-word; font-weight: 500; }
+
+        .payment-methods { display: grid; gap: 10px; }
+        .method {
+            padding: 15px;
+            border: 1px solid #DDD;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .method:hover { border-color: var(--primary); background: #FFFFE0; }
+        .method.active { border-color: var(--primary); background: #FFF9C4; border-width: 2px; }
+        
+        .radio-circle {
+            width: 18px; height: 18px; border-radius: 50%; border: 2px solid #CCC;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .method.active .radio-circle { border-color: #000; }
+        .method.active .radio-circle::after { content: ''; width: 8px; height: 8px; background: #000; border-radius: 50%; }
+
+        .pay-btn {
+            width: 100%;
+            background: #000;
+            color: #FFF;
+            border: none;
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 0;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .pay-btn:hover { background: var(--primary); color: #000; }
+        .pay-btn:disabled { background: #555; cursor: not-allowed; }
+        
+        .secure-badge { text-align: center; margin-top: 15px; font-size: 0.8rem; color: #999; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+        /* Loader Overlay */
+        #loader {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.95);
+            display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 100;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #EEE; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        /* Message Text in Loader */
+        #loaderText { margin-top:15px; font-weight:600; color:#555; text-align:center; padding: 0 20px;}
+
+    </style>
+</head>
+<body>
+
+    <div class="payment-card">
+        <div id="loader">
+            <div class="spinner"></div>
+            <p id="loaderText">Initializing Secure Gateway...</p>
+        </div>
+
+        <div class="header">
+            <img src="logo.png" alt="BrahminBazaar">
+            <h2>Review & Pay</h2>
+        </div>
+
+        <div class="body">
+            <div class="amount-box">
+                <div class="label">Total Payable</div>
+                <div class="amount" id="dispTotal">₹0.00</div>
+            </div>
+
+            <div class="order-summary">
+                <div class="line-item">
+                    <span style="color:#777">Order Ref</span>
+                    <span id="refId" style="font-family:monospace; color:#333">#---</span>
+                </div>
+
+                <div class="review-section">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+                        <div>
+                            <div class="review-label">Buyer Name</div>
+                            <div class="review-val" id="reviewName">---</div>
+                        </div>
+                        <div>
+                            <div class="review-label">Contact Number</div>
+                            <div class="review-val" id="reviewPhone">---</div>
+                        </div>
+                    </div>
+                    
+                    <div class="review-block">
+                        <div class="review-label">Shipping Address</div>
+                        <div class="review-val" id="reviewShip">---</div>
+                    </div>
+
+                    <div class="review-block">
+                        <div class="review-label">Billing Address</div>
+                        <div class="review-val" id="reviewBill">---</div>
+                    </div>
+                </div>
+
+                <div class="line-item total">
+                    <span>Total Charged</span>
+                    <span id="dispTotal2">₹0.00</span>
+                </div>
+            </div>
+
+            <div class="label" style="margin-bottom:10px; text-align:left">Payment Method</div>
+            <div class="payment-methods">
+                <div class="method active" onclick="selectMethod(this)">
+                    <div class="radio-circle"></div>
+                    <div style="font-weight:600">Razorpay Secure Checkout</div>
+                    <div style="margin-left:auto; font-size:0.8rem; color:#666">UPI / Cards / NetBanking</div>
+                </div>
+            </div>
+
+            <div class="secure-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                128-bit SSL Encrypted Transaction
+            </div>
+        </div>
+
+        <button class="pay-btn" id="payButton" onclick="processPayment()">PROCEED TO PAY</button>
+    </div>
+
+    <script>
+        /*******************************************************
+         * CONFIGURATION
+         *******************************************************/
+        const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_ID"; // <--- REPLACE THIS
+        const USE_MOCK_BACKEND = true; 
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        /*******************************************************
+         * API SERVICE CLASS
+         *******************************************************/
+        class ApiService {
+            constructor() {
+                const sess = localStorage.getItem('bb_user_v1');
+                this.token = sess ? JSON.parse(sess).token : null;
+            }
+
+            async request(endpoint, method = 'GET', body = null) {
+                if (USE_MOCK_BACKEND) {
+                    return this.mockRequest(endpoint, method, body);
+                }
+
+                // Real Fetch
+                try {
+                    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.token}`
+                        },
+                        body: body ? JSON.stringify(body) : null
+                    });
+                    if (!res.ok) throw new Error(res.statusText);
+                    return await res.json();
+                } catch (e) {
+                    console.error("API Error", e);
+                    throw e;
+                }
+            }
+
+            // --- Mock Backend Logic ---
+            async mockRequest(endpoint, method, body) {
+                await new Promise(r => setTimeout(r, 600)); // Simulate latency
+
+                const PAYMENT_SESSION_KEY = 'brahminbazaar_payment_session';
+                const ORDERS_KEY = 'brahminbazaar_orders';
+                const CART_KEY = 'brahminbazaar_cart';
+
+                const read = (k) => JSON.parse(localStorage.getItem(k));
+                const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+                if (endpoint === '/payment-session') {
+                    const session = read(PAYMENT_SESSION_KEY);
+                    if (!session) throw new Error("No active session");
+                    return session;
+                }
+
+                if (endpoint === '/verify-payment' && method === 'POST') {
+                    // This is where the magic happens: Save Order & Clear Cart
+                    const session = read(PAYMENT_SESSION_KEY);
+                    const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+                    
+                    if (!session) throw new Error("Session invalid");
+
+                    const newOrder = {
+                        id: 'ORD-' + Date.now().toString().slice(-6),
+                        date: new Date().toISOString(),
+                        status: 'Processing',
+                        paymentId: body.paymentId,
+                        total: session.financials.total,
+                        items: session.items,
+                        userEmail: session.customer.email,
+                        userPhone: session.customer.phone,
+                        address: session.customer.address
+                    };
+
+                    orders.push(newOrder);
+                    write(ORDERS_KEY, orders); // Update Admin/Profile Panel Data
+                    
+                    // Clear Checkout Data
+                    localStorage.removeItem(CART_KEY);
+                    localStorage.removeItem(PAYMENT_SESSION_KEY);
+
+                    return { success: true, orderId: newOrder.id };
+                }
+            }
+
+            // Public Methods
+            async getSession() { return this.request('/payment-session'); }
+            async verifyPayment(details) { return this.request('/verify-payment', 'POST', details); }
+        }
+
+        /*******************************************************
+         * APP LOGIC
+         *******************************************************/
+        const API = new ApiService();
+        let sessionData = null;
+
+        function showLoader(show, msg = "Loading...") {
+            const el = document.getElementById('loader');
+            const txt = document.getElementById('loaderText');
+            txt.textContent = msg;
+            el.style.display = show ? 'flex' : 'none';
+        }
+
+        async function init() {
+            showLoader(true, "Fetching Order Details...");
+            try {
+                sessionData = await API.getSession();
+
+                // Fill UI
+                const total = sessionData.financials.total;
+                document.getElementById('dispTotal').textContent = '₹' + total.toFixed(2);
+                document.getElementById('dispTotal2').textContent = '₹' + total.toFixed(2);
+                document.getElementById('refId').textContent = 'REQ-' + Date.now().toString().slice(-6); // Temp Ref
+
+                const cust = sessionData.customer;
+                document.getElementById('reviewName').textContent = cust.name || '-';
+                document.getElementById('reviewPhone').textContent = cust.phone || '-';
+                document.getElementById('reviewShip').textContent = cust.address || '-';
+                document.getElementById('reviewBill').textContent = cust.billingAddress || cust.address || '-';
+
+            } catch (e) {
+                alert("Session expired. Redirecting to cart.");
+                window.location.href = 'index.html';
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        function selectMethod(el){
+            document.querySelectorAll('.method').forEach(m => m.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function processPayment() {
+            if(!sessionData) return;
+
+            showLoader(true, "Contacting Gateway...");
+            const totalAmount = Math.round(sessionData.financials.total * 100);
+
+            var options = {
+                "key": RAZORPAY_KEY_ID, 
+                "amount": totalAmount, 
+                "currency": "INR",
+                "name": "BrahminBazaar",
+                "description": "Order Payment",
+                "image": "logo.png",
+                "handler": async function (response) {
+                    // Payment Successful at Gateway
+                    // Now verify with backend and save order
+                    showLoader(true, "Verifying & Saving Order...");
+                    
+                    try {
+                        await API.verifyPayment({
+                            paymentId: response.razorpay_payment_id,
+                            orderId: response.razorpay_order_id,
+                            signature: response.razorpay_signature
+                        });
+                        
+                        // Success Redirect
+                        window.location.href = 'index.html?status=success';
+                    } catch(e) {
+                        alert("Payment successful but verification failed. Please contact support.");
+                        showLoader(false);
+                    }
+                },
+                "prefill": {
+                    "name": sessionData.customer.name,
+                    "email": sessionData.customer.email,
+                    "contact": sessionData.customer.phone
+                },
+                "theme": { "color": "#F1C40F" },
+                "modal": {
+                    "ondismiss": function() { showLoader(false); }
+                }
+            };
+
+            try {
+                var rzp1 = new Razorpay(options);
+                rzp1.on('payment.failed', function (response){
+                    showLoader(false);
+                    alert("Payment Failed: " + response.error.description);
+                });
+                rzp1.open();
+            } catch (e) {
+                console.error(e);
+                showLoader(false);
+                alert("Gateway Error. Make sure you set the RAZORPAY_KEY_ID in the code.");
+            }
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
